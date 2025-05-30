@@ -6,7 +6,8 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushBut
 from PyQt6.QtGui import QFont, QPixmap, QImage
 from PyQt6.QtCore import Qt, pyqtSignal, QTimer
 
-import config #
+import config
+from app.src.utils.global_instances import app_logger
 
 class DataCollectionModePage(QWidget):
     go_back_signal = pyqtSignal()
@@ -16,32 +17,28 @@ class DataCollectionModePage(QWidget):
         self.main_window_ref = main_window_ref
         self.setObjectName("DataCollectionModePage")
 
-        # --- Session State ---
         self.session_id = None
         self.session_start_time = None
         self.images_captured_count = 0
         self.session_image_log = []
         self.current_user_level = "Unknown"
-        self.camera_active = False # Will be set true when camera is actually started
+        self.camera_active = False
 
-        # --- UI Elements ---
         self._setup_ui()
 
-        # --- Timer for Session Duration Display ---
         self.session_duration_timer = QTimer(self)
         self.session_duration_timer.timeout.connect(self._update_session_duration_display)
 
-        # --- Ensure log directories exist (for offline mode) ---
-        if config.DATA_STORAGE_FLAG == 1: #
-            os.makedirs(config.SESSION_LOGS_PATH, exist_ok=True) #
-            os.makedirs(config.IMAGE_LOGS_PATH, exist_ok=True) #
+        if config.DATA_STORAGE_FLAG == 1: # Offline
+            os.makedirs(config.SESSION_LOGS_PATH, exist_ok=True)
+            os.makedirs(config.IMAGE_LOGS_PATH, exist_ok=True)
 
     def _setup_ui(self):
         main_layout = QHBoxLayout(self)
         main_layout.setContentsMargins(10,10,10,10)
         main_layout.setSpacing(10)
 
-        # --- Left Panel: Live Feed and Captured Image ---
+        # Left Panel: Live Feed and Captured Image
         left_panel_layout = QVBoxLayout()
         
         self.live_feed_label = QLabel("Live Feed Area (Camera Off)")
@@ -60,7 +57,7 @@ class DataCollectionModePage(QWidget):
         self.captured_image_label.setStyleSheet("background-color: #333; color: white;")
         left_panel_layout.addWidget(self.captured_image_label, 0)
 
-        # --- Right Panel: Info and Controls ---
+        # Right Panel: Info and Controls
         right_panel_layout = QVBoxLayout()
         right_panel_layout.setSpacing(15)
 
@@ -75,7 +72,7 @@ class DataCollectionModePage(QWidget):
         self.image_counter_label.setFont(QFont("Arial", 14))
         self.session_time_label = QLabel("Session Time: 0s")
         self.session_time_label.setFont(QFont("Arial", 14))
-        self.storage_mode_label = QLabel(f"Storage: {'Offline (Local)' if config.DATA_STORAGE_FLAG == 1 else 'Online (Cloud)'}") #
+        self.storage_mode_label = QLabel(f"Storage: {'Offline (Local)' if config.DATA_STORAGE_FLAG == 1 else 'Online (Cloud)'}")
         self.storage_mode_label.setFont(QFont("Arial", 14))
 
         info_grid.addWidget(QLabel("Counter:"), 0, 0)
@@ -92,7 +89,7 @@ class DataCollectionModePage(QWidget):
         self.capture_button.setFont(QFont("Arial", 16, QFont.Weight.Bold))
         self.capture_button.setMinimumHeight(60)
         self.capture_button.clicked.connect(self._capture_image)
-        self.capture_button.setEnabled(False) # Disabled until camera is active
+        self.capture_button.setEnabled(False)
         right_panel_layout.addWidget(self.capture_button)
 
         self.end_session_button = QPushButton("End Session & Go Home")
@@ -116,46 +113,36 @@ class DataCollectionModePage(QWidget):
         else:
             self.current_user_level = "N/A"
 
+        if app_logger:
+            app_logger.log_session_start(session_type="Data Collection")
+
         self._update_image_counter_display()
         self.session_time_label.setText("Session Time: 0s")
         self.captured_image_label.setText("Last Captured Image")
         self.live_feed_label.setText("Initializing Camera...")
         
         print(f"Session {self.session_id} started. User: {self.current_user_level}")
-        print(f"Attempting to use Camera Config: W:{config.CAMERA_RESOLUTION_WIDTH}, H:{config.CAMERA_RESOLUTION_HEIGHT}, FPS:{config.CAMERA_FPS}, RotationOpt:{config.CAMERA_ROTATION_OPTION}") #
+        print(f"Attempting to use Camera Config: W:{config.CAMERA_RESOLUTION_WIDTH}, H:{config.CAMERA_RESOLUTION_HEIGHT}, FPS:{config.CAMERA_FPS}, RotationOpt:{config.CAMERA_ROTATION_OPTION}")
 
-        # --- TODO: Implement Actual Camera Initialization Here ---
-        # Example:
-        # try:
-        #     self.camera = initialize_realsense_camera(config.CAMERA_RESOLUTION_WIDTH, ...)
-        #     self.camera_active = True
-        #     self.live_feed_label.setText("Camera Active")
-        #     self.capture_button.setEnabled(True)
-        #     # Start a thread or QTimer to fetch frames and update self.live_feed_label
-        # except Exception as e:
-        #     self.live_feed_label.setText(f"Failed to start camera: {e}")
-        #     self.camera_active = False
-        #     self.capture_button.setEnabled(False)
-        
+        # TODO: Implement camera initialization, live feed, and frame capture logic
         # For now, simulate camera becoming active for UI testing:
-        self.camera_active = True # Assume camera started successfully for now
+        self.camera_active = True
         self.live_feed_label.setText("Camera Feed (Implement Update)")
         self.capture_button.setEnabled(True)
 
         if self.camera_active:
             if not self.session_duration_timer.isActive():
-                self.session_duration_timer.start(1000) # Update duration every second
+                self.session_duration_timer.start(1000)
         print("Data collection session started.")
 
     def _update_session_duration_display(self):
-        if self.session_start_time and self.camera_active: # Only update if session is ongoing
+        if self.session_start_time and self.camera_active:
             duration = datetime.datetime.now() - self.session_start_time
             self.session_time_label.setText(f"Session Time: {int(duration.total_seconds())}s")
 
     # --- Image Handling ---
     def _capture_image(self):
         if not self.camera_active or not self.session_id:
-            # This case should ideally be prevented by disabling the capture button
             print("Capture attempt failed: Camera not active or session not started.")
             return
 
@@ -163,38 +150,17 @@ class DataCollectionModePage(QWidget):
         capture_time = datetime.datetime.now()
         image_filename_base = f"session_{self.session_id}_img_{self.images_captured_count:04d}"
         
-        # --- TODO: Implement Actual Image Capture from Camera Frame Here ---
-        # Example:
-        # captured_frame_data = self.camera.get_current_frame_for_saving() # Your method
-        # if captured_frame_data is None:
-        #     print("Failed to capture frame.")
-        #     return
-        
-        # --- TODO: Implement Display of Captured Image ---
-        # Example:
-        # q_image = QImage(captured_frame_data, width, height, QImage.Format...)
-        # pixmap = QPixmap.fromImage(q_image)
-        # self.captured_image_label.setPixmap(pixmap.scaled(
-        #     self.captured_image_label.width(), self.captured_image_label.height(),
-        #     Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation
-        # ))
+        # TODO: Implement actual image capture, display, and saving/uploading
         self.captured_image_label.setText(f"Captured: {image_filename_base}.png\n(Display Not Implemented)")
         
-        image_path_or_link = "" # Will be the actual path or cloud link
+        image_path_or_link = ""
 
         if config.DATA_STORAGE_FLAG == 1: # Offline
             image_filename = f"{image_filename_base}.png"
-            image_full_path = os.path.join(config.IMAGE_LOGS_PATH, image_filename) #
-            
-            # --- TODO: Implement Actual Image Saving to File ---
-            # Example using OpenCV (cv2):
-            # import cv2
-            # cv2.imwrite(image_full_path, captured_frame_data) 
+            image_full_path = os.path.join(config.IMAGE_LOGS_PATH, image_filename)
             print(f"Image would be saved to: {image_full_path}")
             image_path_or_link = image_full_path
         else: # Online
-            # --- TODO: Implement Upload to Google Drive ---
-            # This would involve Google Drive API calls
             print(f"Image {image_filename_base} would be prepared for Google Drive upload.")
             image_path_or_link = f"gdrive_placeholder_link_for_{image_filename_base}"
 
@@ -202,8 +168,8 @@ class DataCollectionModePage(QWidget):
             "filename": image_filename_base + (".png" if config.DATA_STORAGE_FLAG == 1 else ""),
             "path_or_link": image_path_or_link,
             "timestamp": capture_time.isoformat(),
-            "classification_placeholder": "N/A", # To be filled later
-            "classification_log_link_placeholder": "N/A" # To be filled later
+            "classification_placeholder": "N/A",
+            "classification_log_link_placeholder": "N/A"
         })
         self._update_image_counter_display()
         print(f"Image {self.images_captured_count} captured and logged.")
@@ -221,10 +187,7 @@ class DataCollectionModePage(QWidget):
         if self.session_duration_timer.isActive():
             self.session_duration_timer.stop()
         
-        # --- TODO: Implement Actual Camera Shutdown/Release Here ---
-        # Example:
-        # if hasattr(self, 'camera') and self.camera:
-        #     self.camera.release() # Or your camera object's equivalent
+        # TODO: Implement camera shutdown/resource release
         self.live_feed_label.setText("Camera Off")
         print("Camera resources released (implementation pending).")
 
@@ -240,14 +203,20 @@ class DataCollectionModePage(QWidget):
             "end_time": session_end_time.isoformat(),
             "total_duration_seconds": total_session_time_seconds,
             "images_captured": self.images_captured_count,
-            "data_storage_mode": "Offline" if config.DATA_STORAGE_FLAG == 1 else "Online", #
+            "data_storage_mode": "Offline" if config.DATA_STORAGE_FLAG == 1 else "Online",
             "images_details_count": len(self.session_image_log)
         }
         print(f"Session {self.session_id} ended. Duration: {total_session_time_seconds}s. Images: {self.images_captured_count}.")
 
+        if app_logger:
+            app_logger.log_data_collection(
+                image_info=self.session_image_log,
+                totals=session_summary
+            )
+
         if config.DATA_STORAGE_FLAG == 1: # Offline - Save to CSV
-            session_log_filename = os.path.join(config.SESSION_LOGS_PATH, f"summary_{self.session_id}.csv") #
-            image_details_log_filename = os.path.join(config.SESSION_LOGS_PATH, f"images_{self.session_id}.csv") #
+            session_log_filename = os.path.join(config.SESSION_LOGS_PATH, f"summary_{self.session_id}.csv")
+            image_details_log_filename = os.path.join(config.SESSION_LOGS_PATH, f"images_{self.session_id}.csv")
 
             try:
                 with open(session_log_filename, 'w', newline='') as f:
@@ -266,7 +235,7 @@ class DataCollectionModePage(QWidget):
             except IOError as e:
                 print(f"Error writing local log files: {e}")
         else: # Online
-            # --- TODO: Implement Saving session_summary to SQL Database ---
+            # TODO: Implement Saving session_summary and image_details to online SQL database
             print("Session summary (and image details) would be saved to online SQL database.")
         
         self.session_start_time = None 
@@ -279,15 +248,9 @@ class DataCollectionModePage(QWidget):
 
     def hideEvent(self, event):
         super().hideEvent(event)
-        # If the page is hidden and a session was active, ensure it's properly ended.
-        # This might happen if user navigates away by means other than "End Session" button
-        # (e.g. closing window, though main_window's closeEvent should handle that).
-        if self.session_start_time and self.camera_active: # Check if session was actually running
-            print("DataCollectionModePage hidden during active session. Consider auto-ending or prompting.")
-            # For now, we'll rely on the explicit "End Session" button.
-            # You might want to stop the camera here regardless.
-            self.camera_active = False # Mark as inactive
+        if self.session_start_time and self.camera_active:
+            print("DataCollectionModePage hidden during active session. Camera marked inactive.")
+            self.camera_active = False
             self.capture_button.setEnabled(False)
             if self.session_duration_timer.isActive():
                 self.session_duration_timer.stop()
-            # self._end_session() # Potentially auto-end, but could lead to data loss if not intended.
