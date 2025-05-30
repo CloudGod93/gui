@@ -8,7 +8,6 @@ from PyQt6.QtCore import (
     QRect, QPoint, pyqtSignal, QTimer, pyqtProperty, QPointF
 )
 
-# Import necessary configurations
 from config import LOGO_PATH, COMPANY_NAME, DEPARTMENT_NAME
 
 class LoadingSpinner(QWidget):
@@ -93,7 +92,7 @@ class SplashScreen(QWidget):
         self.logo_label = QLabel()
         self.logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
-        pixmap = QPixmap(LOGO_PATH) # Use LOGO_PATH from config
+        pixmap = QPixmap(LOGO_PATH) 
         if not pixmap.isNull():
             scaled_pixmap = pixmap.scaled(200, 100, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
             self.logo_label.setPixmap(scaled_pixmap)
@@ -102,12 +101,12 @@ class SplashScreen(QWidget):
             self.logo_label.setFont(QFont("Arial", 20, QFont.Weight.Bold))
             self.logo_label.setStyleSheet("color: white;")
         
-        self.company_name_label = QLabel(COMPANY_NAME) # Use COMPANY_NAME from config
+        self.company_name_label = QLabel(COMPANY_NAME) 
         self.company_name_label.setFont(QFont("Arial", 24, QFont.Weight.Bold))
         self.company_name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.company_name_label.setStyleSheet("color: white;")
 
-        self.department_label = QLabel(DEPARTMENT_NAME) # Use DEPARTMENT_NAME from config
+        self.department_label = QLabel(DEPARTMENT_NAME) 
         self.department_label.setFont(QFont("Arial", 16, QFont.Weight.Normal))
         self.department_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.department_label.setStyleSheet("color: #FFCDD2;")

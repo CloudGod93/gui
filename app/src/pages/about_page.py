@@ -1,5 +1,3 @@
-# temp/app/src/about_page.py
-
 from PyQt6.QtWidgets import (
     QDialog, QLabel, QVBoxLayout, QDialogButtonBox, QTextBrowser, QFrame
 )
@@ -14,7 +12,7 @@ class AboutDialog(QDialog):
         self.setWindowTitle(f"About {config.APP_TITLE}")
         self.setModal(True)
         self.setMinimumSize(450, 400) 
-        self.setWindowState(Qt.WindowState.WindowMaximized)  # Start maximized
+        self.setWindowState(Qt.WindowState.WindowMaximized)  
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(20, 20, 20, 20)
