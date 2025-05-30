@@ -1,10 +1,10 @@
 import os
 
 # --- Application Information ---
-APP_TITLE = "MidWest Machine LLC - CV System"
+APP_TITLE = "Beef Ribbing Automation System"
 COMPANY_NAME = "MidWest Machine LLC"
 DEPARTMENT_NAME = "Automation R&D Department"
-APP_VERSION = "Version 1.0.0"
+APP_VERSION = ""
 
 # --- Path Configuration ---
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__)) 

@@ -173,7 +173,6 @@ class SplashScreen(QWidget):
 
     def start_animation(self, main_window):
         self.main_window_instance = main_window
-        # ... (rest of the animation setup remains the same)
         anim_logo_fadein = QPropertyAnimation(self.logo_opacity_effect, b"opacity")
         anim_logo_fadein.setDuration(800)
         anim_logo_fadein.setStartValue(0.0)
@@ -229,6 +228,6 @@ class SplashScreen(QWidget):
 
     def _on_animation_finished(self):
         if self.main_window_instance:
-            self.main_window_instance.show()
+            self.main_window_instance.showMaximized()
         self.animation_finished_signal.emit()
         self.close()

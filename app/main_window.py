@@ -1,13 +1,15 @@
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QLabel, QVBoxLayout, QPushButton, 
-    QStatusBar, QMenu, QMessageBox # Added QMessageBox
+    QStatusBar, QMenu, QMessageBox
 )
-from PyQt6.QtGui import QFont, QAction, QCloseEvent # Added QCloseEvent
+from PyQt6.QtGui import QFont, QAction, QCloseEvent
 from PyQt6.QtCore import Qt, QPoint
 
 import config 
-from app.src.about_page import AboutDialog
-from app.src.system_access_dialog import SystemAccessDialog 
+from app.src.pages.about_page import AboutDialog
+from app.src.pages.system_access_dialog import SystemAccessDialog
+from app.src.pages.camera_settings_dialog import CameraSettingsDialog
+from app.src.pages.system_settings_dialog import SystemSettingsDialog
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -15,7 +17,9 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(config.APP_TITLE)
         self.setGeometry(100, 100, 900, 700)
 
-        self.current_user_level = config.DEFAULT_USER_LEVEL
+        self.current_user_level = getattr(config, 'DEFAULT_USER_LEVEL', "operator").lower()
+        self.ADMIN_LEVEL = getattr(config, 'ADMIN_LEVEL', "admin").lower()
+        self.MAINTENANCE_LEVEL = getattr(config, 'MAINTENANCE_LEVEL', "maintenance").lower()
 
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
@@ -44,11 +48,8 @@ class MainWindow(QMainWindow):
         
         self.center_on_screen()
 
-
     def _update_ui_for_user_level(self):
-        """Updates UI elements that depend on the current user level."""
-
-        self.system_access_menu.setTitle(f"Access: {self.current_user_level}")
+        self.system_access_menu.setTitle(f"Access: {self.current_user_level.capitalize()}")
 
         menu_action = self.system_access_menu.menuAction()
         if menu_action:
@@ -59,7 +60,7 @@ class MainWindow(QMainWindow):
 
         self.system_access_menu.clear() 
 
-        if self.current_user_level == config.DEFAULT_USER_LEVEL: 
+        if self.current_user_level == getattr(config, 'DEFAULT_USER_LEVEL', "operator").lower(): 
             elevate_action = QAction("Elevate Permissions...", self.system_access_menu)
             elevate_action.triggered.connect(self._handle_user_level_change)
             self.system_access_menu.addAction(elevate_action)
@@ -74,22 +75,34 @@ class MainWindow(QMainWindow):
             logout_action.triggered.connect(self._handle_logout)
             self.system_access_menu.addAction(logout_action)
         
+        can_access_camera = self.current_user_level in [self.ADMIN_LEVEL, self.MAINTENANCE_LEVEL]
+        self.camera_settings_action.setEnabled(can_access_camera)
+        self.camera_settings_action.setToolTip(
+            "Configure camera parameters" if can_access_camera else "Requires Admin or Maintenance access"
+        )
+
+        can_access_system = self.current_user_level == self.ADMIN_LEVEL
+        self.system_settings_action.setEnabled(can_access_system)
+        self.system_settings_action.setToolTip(
+            "Configure system parameters" if can_access_system else "Requires Admin access"
+        )
+
     def _create_menu_bar(self):
         menu_bar = self.menuBar()
 
         self.system_access_menu = QMenu(self) 
         menu_bar.addMenu(self.system_access_menu) 
 
-        # --- Options Menu ---
         options_menu = menu_bar.addMenu("&Options")
         
-        camera_settings_action = QAction("Camera Settings", self)
-        options_menu.addAction(camera_settings_action)
+        self.camera_settings_action = QAction("Camera Settings", self)
+        self.camera_settings_action.triggered.connect(self._open_camera_settings_dialog)
+        options_menu.addAction(self.camera_settings_action)
         
-        system_settings_action = QAction("System Settings", self)
-        options_menu.addAction(system_settings_action)
+        self.system_settings_action = QAction("System Settings", self)
+        self.system_settings_action.triggered.connect(self._open_system_settings_dialog)
+        options_menu.addAction(self.system_settings_action)
         
-        # --- Help Menu ---
         help_menu = menu_bar.addMenu("&Help")
         about_action = QAction("&About", self)
         about_action.triggered.connect(self._show_about_dialog)
@@ -98,10 +111,8 @@ class MainWindow(QMainWindow):
         help_menu.addSeparator() 
 
         close_app_action = QAction("Close Application", self) 
-        # This action will now indirectly trigger the closeEvent
         close_app_action.triggered.connect(self.close) 
         help_menu.addAction(close_app_action)
-
 
     def _show_about_dialog(self):
         dialog = AboutDialog(self)
@@ -110,34 +121,52 @@ class MainWindow(QMainWindow):
     def _handle_user_level_change(self):
         dialog = SystemAccessDialog(self) 
         if dialog.exec(): 
-            selected_user = dialog.get_selected_user_level()
-            if selected_user:
-                self.current_user_level = selected_user
+            selected_user_raw = dialog.get_selected_user_level()
+            if selected_user_raw:
+                self.current_user_level = selected_user_raw.lower() 
                 self._update_ui_for_user_level()
 
     def _handle_logout(self):
-        self.current_user_level = config.DEFAULT_USER_LEVEL
+        self.current_user_level = getattr(config, 'DEFAULT_USER_LEVEL', "operator").lower()
         self._update_ui_for_user_level()
+        self.statusBar.showMessage(f"Logged out. Access level: {self.current_user_level.capitalize()}", 3000)
 
     def center_on_screen(self):
-        screen_geometry = QApplication.primaryScreen().availableGeometry()
-        if screen_geometry:
-             self.move(screen_geometry.center() - QPoint(self.width() // 2, self.height() // 2))
-        else:
-             desktop = QApplication.screens()[0].availableGeometry()
-             self.move(desktop.center() - QPoint(self.width() // 2, self.height() // 2))
+        try:
+            screen_geometry = QApplication.primaryScreen().availableGeometry()
+            if screen_geometry:
+                self.move(screen_geometry.center() - QPoint(self.width() // 2, self.height() // 2))
+            else: 
+                desktop = QApplication.screens()[0].availableGeometry()
+                self.move(desktop.center() - QPoint(self.width() // 2, self.height() // 2))
+        except Exception as e:
+            print(f"Warning: Could not center window on screen: {e}")
+
 
     def closeEvent(self, event: QCloseEvent): 
-        """Override the close event to ask for confirmation."""
         reply = QMessageBox.question(
-            self,
-            "Confirm Exit",
-            "Are you sure you want to close the application?",
+            self, "Confirm Exit", "Are you sure you want to close the application?",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No  
         )
-
         if reply == QMessageBox.StandardButton.Yes:
             event.accept() 
         else:
             event.ignore() 
+
+    def _open_camera_settings_dialog(self):
+        if self.current_user_level not in [self.ADMIN_LEVEL, self.MAINTENANCE_LEVEL]:
+            QMessageBox.warning(self, "Access Denied", "You do not have permission to access Camera Settings.")
+            return
+        
+        dialog = CameraSettingsDialog(self)
+        dialog.exec()
+
+    def _open_system_settings_dialog(self):
+        if self.current_user_level != self.ADMIN_LEVEL:
+            QMessageBox.warning(self, "Access Denied", "You do not have permission to access System Settings.")
+            return
+            
+        dialog = SystemSettingsDialog(self)
+        dialog.exec()
+

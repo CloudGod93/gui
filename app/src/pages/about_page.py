@@ -14,6 +14,7 @@ class AboutDialog(QDialog):
         self.setWindowTitle(f"About {config.APP_TITLE}")
         self.setModal(True)
         self.setMinimumSize(450, 400) 
+        self.setWindowState(Qt.WindowState.WindowMaximized)  # Start maximized
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(20, 20, 20, 20)
