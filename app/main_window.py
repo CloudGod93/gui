@@ -6,11 +6,11 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QFont, QAction, QCloseEvent, QPixmap, QShowEvent
 from PyQt6.QtCore import Qt, QPoint
 
-import config 
-from app.src.pages.about_page import AboutDialog 
-from app.src.pages.system_access_dialog import SystemAccessDialog 
-from app.src.pages.camera_settings_dialog import CameraSettingsDialog 
-from app.src.pages.system_settings_dialog import SystemSettingsDialog 
+import config #
+from app.src.pages.about_page import AboutDialog #
+from app.src.pages.system_access_dialog import SystemAccessDialog #
+from app.src.pages.camera_settings_dialog import CameraSettingsDialog #
+from app.src.pages.system_settings_dialog import SystemSettingsDialog #
 
 from app.src.modes.data_collection_mode import DataCollectionModePage
 from app.src.modes.test_mode import TestModePage
@@ -18,6 +18,7 @@ from app.src.modes.production_mode import ProductionModePage
 
 
 class MainWindow(QMainWindow):
+    # --- Page Indices ---
     HOME_PAGE_INDEX = 0
     DATA_COLLECTION_PAGE_INDEX = 1
     TEST_PAGE_INDEX = 2
@@ -25,15 +26,17 @@ class MainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle(config.APP_TITLE)
+        self.setWindowTitle(config.APP_TITLE) #
         self.setGeometry(100, 100, 1200, 800)
         self._initial_show_done = False
 
-        self.current_user_level = getattr(config, 'DEFAULT_USER_LEVEL', "operator").lower()
-        self.ADMIN_LEVEL = getattr(config, 'ADMIN_LEVEL', "admin").lower()
-        self.MAINTENANCE_LEVEL = getattr(config, 'MAINTENANCE_LEVEL', "maintenance").lower()
-        self.current_operation_mode_id = config.DEFAULT_OPERATION_MODE_ID
+        # --- Application State ---
+        self.current_user_level = getattr(config, 'DEFAULT_USER_LEVEL', "operator").lower() #
+        self.ADMIN_LEVEL = getattr(config, 'ADMIN_LEVEL', "admin").lower() #
+        self.MAINTENANCE_LEVEL = getattr(config, 'MAINTENANCE_LEVEL', "maintenance").lower() #
+        self.current_operation_mode_id = config.DEFAULT_OPERATION_MODE_ID #
 
+        # --- UI Setup ---
         self._create_menu_bar()
 
         self.stacked_widget = QStackedWidget()
@@ -63,7 +66,7 @@ class MainWindow(QMainWindow):
 
         self.logo_label = QLabel()
         self.logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        pixmap = QPixmap(config.LOGO_PATH)
+        pixmap = QPixmap(config.LOGO_PATH) #
         if not pixmap.isNull():
             scaled_pixmap = pixmap.scaledToWidth(400, Qt.TransformationMode.SmoothTransformation)
             self.logo_label.setPixmap(scaled_pixmap)
@@ -94,7 +97,7 @@ class MainWindow(QMainWindow):
         self.stacked_widget.addWidget(self.home_page_widget)
 
     def _create_mode_pages(self):
-        self.data_collection_page = DataCollectionModePage()
+        self.data_collection_page = DataCollectionModePage(main_window_ref=self) #
         self.test_page = TestModePage()
         self.production_page = ProductionModePage()
 
@@ -107,11 +110,11 @@ class MainWindow(QMainWindow):
         self.stacked_widget.addWidget(self.production_page)      
         
     def _start_automation_task(self):
-        if self.current_operation_mode_id == 1:
+        if self.current_operation_mode_id == 1: #
             self.stacked_widget.setCurrentIndex(self.DATA_COLLECTION_PAGE_INDEX)
-        elif self.current_operation_mode_id == 2:
+        elif self.current_operation_mode_id == 2: #
             self.stacked_widget.setCurrentIndex(self.TEST_PAGE_INDEX)
-        elif self.current_operation_mode_id == 3:
+        elif self.current_operation_mode_id == 3: #
             self.stacked_widget.setCurrentIndex(self.PRODUCTION_PAGE_INDEX)
         else:
             QMessageBox.warning(self, "Mode Error", "Invalid operation mode selected.")
@@ -129,7 +132,7 @@ class MainWindow(QMainWindow):
             self._initial_show_done = True
 
     def _update_operation_mode_display(self):
-        mode_name = config.APP_MODES.get(self.current_operation_mode_id, "Unknown Mode")
+        mode_name = config.APP_MODES.get(self.current_operation_mode_id, "Unknown Mode") #
         if hasattr(self, 'operation_mode_label'): 
             self.operation_mode_label.setText(f"Mode: {mode_name}")
         
@@ -145,7 +148,7 @@ class MainWindow(QMainWindow):
             menu_action.setText(access_menu_title) 
 
         self.system_access_menu.clear()
-        if self.current_user_level == getattr(config, 'DEFAULT_USER_LEVEL', "operator").lower():
+        if self.current_user_level == getattr(config, 'DEFAULT_USER_LEVEL', "operator").lower(): #
             elevate_action = QAction("Elevate Permissions...", self.system_access_menu)
             elevate_action.triggered.connect(self._handle_user_level_change)
             self.system_access_menu.addAction(elevate_action)
@@ -197,7 +200,7 @@ class MainWindow(QMainWindow):
 
     # --- Dialog Handling and Actions ---
     def _show_about_dialog(self):
-        dialog = AboutDialog(self)
+        dialog = AboutDialog(self) #
         dialog.exec()
 
     def _handle_user_level_change(self):
@@ -205,7 +208,7 @@ class MainWindow(QMainWindow):
              QMessageBox.information(self, "User Level Change", "Please return to the home screen to change user level.")
              return
 
-        dialog = SystemAccessDialog(self)
+        dialog = SystemAccessDialog(self) #
         if dialog.exec():
             selected_user_raw = dialog.get_selected_user_level()
             if selected_user_raw:
@@ -213,7 +216,7 @@ class MainWindow(QMainWindow):
                 self._update_ui_for_user_level()
 
     def _handle_logout_and_go_home(self): 
-        self.current_user_level = getattr(config, 'DEFAULT_USER_LEVEL', "operator").lower()
+        self.current_user_level = getattr(config, 'DEFAULT_USER_LEVEL', "operator").lower() #
         self._update_ui_for_user_level()
         self.go_to_home_page() 
 
@@ -224,7 +227,7 @@ class MainWindow(QMainWindow):
         if self.current_user_level not in [self.ADMIN_LEVEL, self.MAINTENANCE_LEVEL]:
             QMessageBox.warning(self, "Access Denied", "You do not have permission to access Camera Settings.")
             return
-        dialog = CameraSettingsDialog(self)
+        dialog = CameraSettingsDialog(self) #
         dialog.exec()
 
     def _open_system_settings_dialog_with_mode_handling(self):
@@ -235,7 +238,7 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "Access Denied", "You do not have permission to access System Settings.")
             return
 
-        dialog = SystemSettingsDialog(self, current_mode_id=self.current_operation_mode_id)
+        dialog = SystemSettingsDialog(self, current_mode_id=self.current_operation_mode_id) #
         if dialog.exec():
             new_mode_id = dialog.get_selected_mode_id()
             if new_mode_id != self.current_operation_mode_id:
