@@ -8,11 +8,10 @@ from PyQt6.QtCore import (
     QRect, QPoint, pyqtSignal, QTimer, pyqtProperty, QPointF
 )
 
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-LOGO_FILENAME = "assets/Mwlogo.png"
-LOGO_PATH = os.path.join(SCRIPT_DIR, LOGO_FILENAME)
+# Import necessary configurations
+from config import LOGO_PATH, COMPANY_NAME, DEPARTMENT_NAME
 
-class LoadingSpinner(QWidget): #
+class LoadingSpinner(QWidget):
     def __init__(self, parent=None, color=Qt.GlobalColor.white, minimumTrailOpacity=3.0, rotationSpeed=60, diameter=30, lines=12):
         super().__init__(parent)
         self._color = QColor(color)
@@ -94,7 +93,7 @@ class SplashScreen(QWidget):
         self.logo_label = QLabel()
         self.logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
-        pixmap = QPixmap(LOGO_PATH)
+        pixmap = QPixmap(LOGO_PATH) # Use LOGO_PATH from config
         if not pixmap.isNull():
             scaled_pixmap = pixmap.scaled(200, 100, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
             self.logo_label.setPixmap(scaled_pixmap)
@@ -103,12 +102,12 @@ class SplashScreen(QWidget):
             self.logo_label.setFont(QFont("Arial", 20, QFont.Weight.Bold))
             self.logo_label.setStyleSheet("color: white;")
         
-        self.company_name_label = QLabel("MidWest Machine LLC")
+        self.company_name_label = QLabel(COMPANY_NAME) # Use COMPANY_NAME from config
         self.company_name_label.setFont(QFont("Arial", 24, QFont.Weight.Bold))
         self.company_name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.company_name_label.setStyleSheet("color: white;")
 
-        self.department_label = QLabel("Automation Department")
+        self.department_label = QLabel(DEPARTMENT_NAME) # Use DEPARTMENT_NAME from config
         self.department_label.setFont(QFont("Arial", 16, QFont.Weight.Normal))
         self.department_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.department_label.setStyleSheet("color: #FFCDD2;")
@@ -174,7 +173,7 @@ class SplashScreen(QWidget):
 
     def start_animation(self, main_window):
         self.main_window_instance = main_window
-
+        # ... (rest of the animation setup remains the same)
         anim_logo_fadein = QPropertyAnimation(self.logo_opacity_effect, b"opacity")
         anim_logo_fadein.setDuration(800)
         anim_logo_fadein.setStartValue(0.0)
@@ -221,7 +220,7 @@ class SplashScreen(QWidget):
         self.overall_animation.addAnimation(anim_loading_text_fadein)
         self.overall_animation.addPause(2000)
         self.overall_animation.addAnimation(anim_splash_fadeout)
-
+        
         self.overall_animation.finished.connect(self._on_animation_finished)
         
         self.setWindowOpacity(1.0)
